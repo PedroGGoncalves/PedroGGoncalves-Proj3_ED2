@@ -1,5 +1,5 @@
-#define MAXKEYS 4
-#define MINKEYS MAXKEYS/2
+#define MAXKEYS 3
+#define MINKEYS (MAXKEYS-1)/2
 #define NIL (-1)
 #define NOKEY -1
 #define NO 0
@@ -82,13 +82,13 @@ int insert (int rrn, int key, int *promo_r_child, int *promo_key){
        }
  
        if(page.keycount < MAXKEYS){
-       		printf("Chave %d inserida com sucesso\n",p_b_key);//mudar de lugar para n repetir
+       		printf("Chave1 %d inserida com sucesso\n",p_b_key);//mudar de lugar para n repetir
              ins_in_page(p_b_key, p_b_rrn, &page);
              btwrite(rrn, &page);
              return(NO);
        }else{
              split(p_b_key, p_b_rrn, &page, promo_key, promo_r_child, &newpage);
-             printf("Chave %d inserida com sucesso\n",p_b_key);//mudar de lugar para n repetir
+             printf("Chave2 %d inserida com sucesso\n",p_b_key);//mudar de lugar para n repetir
 			 btwrite(rrn, &page);
              btwrite(*promo_r_child, &newpage);
              return(YES);
@@ -122,6 +122,7 @@ int create_tree(){
       btfd = fopen("btree.bin","w+b");
       fclose (btfd);
       btopen();
+    	printf("a");
       scanf("%d",&key);
       return (create_root(key, NIL, NIL));
 }
@@ -204,34 +205,58 @@ void split(int key, int r_child, BTPAGE *p_oldpage, int *promo_key, int *promo_r
       for (j = 0; j < MAXKEYS; j++){
           workkeys[j] = p_oldpage->key[j];
           workchil[j] = p_oldpage->child[j];
+          //printf("%d %d A",p_oldpage->key[j],p_oldpage->child[j]);
       }
-      
+      printf("\n");
+      //workkeys[0], workkeys[1] *p_newpage
       workchil[j] = p_oldpage->child[j];
       
       for (j = MAXKEYS; key < workkeys[j-1] && j > 0; j--){
           workkeys[j] = workkeys[j-1];
           workchil[j+1] = workchil[j];
       }
- 
       workkeys[j] = key;
       workchil[j+1] = r_child;
 
       *promo_r_child = getpage();
       pageinit(p_newpage);
       //Alterar aki para funcionar para ordem par (chave=3)
-      for (j = 0; j < MINKEYS; j++){
+      /*for (j = 0; j <= MINKEYS; j++){ //att mudei isso e qse foi
           p_oldpage->key[j] = workkeys[j];
+          //printf("B%d %d %d\n",workkeys[j],workkeys[j+1+MINKEYS],NOKEY);
           p_oldpage->child[j] = workchil[j];
           p_newpage->key[j] = workkeys[j+1+MINKEYS];
           p_newpage->child[j] = workchil[j+1+MINKEYS];
           p_oldpage->key[j+MINKEYS] = NOKEY;
           p_oldpage->child[j+1+MINKEYS] = NIL;
-      }
-      p_oldpage->child[MINKEYS] = workchil[MINKEYS];
-      p_newpage->child[MINKEYS] = workchil[j+1+MINKEYS];
+          //printf("B%d %d %d\n",j,j+MINKEYS,j+1+MINKEYS);
+      }*/
+       p_oldpage->key[0] = workkeys[0];
+        p_oldpage->child[0] = workchil[0];
+        p_newpage->key[0] = workkeys[2];
+        p_newpage->child[0] = workchil[2];
+        
+        p_oldpage->key[1] = NOKEY;
+        p_oldpage->key[2] = NOKEY;//adicioei isso att
+        p_oldpage->child[2] = NIL;
+        p_oldpage->child[1] = workchil[1];
+        //att qse la
+        //talvez fazer ideia (ver anots)
+        p_newpage->key[1] = workkeys[3];
+        p_newpage->child[1] = workchil[3];
+        p_newpage->child[2] = workchil[4]; //ultima mudança e aparentemente certyo
+      
+      
       p_newpage->keycount = MAXKEYS - MINKEYS;
       p_oldpage->keycount = MINKEYS;
-      *promo_key = workkeys[MINKEYS];
-      //
+      *promo_key = workkeys[MINKEYS];//att *promo_key = workkeys[MINKEYS-1];
+      printf("%d %d %d %d\n",workkeys[0],workkeys[1],workkeys[2],workkeys[3]);
+      printf("%d %d %d %d %d\n",workchil[0],workchil[1],workchil[2],workchil[3],workchil[4]);
+	  printf("%d %d %d %d\n",p_oldpage->key[0],p_oldpage->key[1],p_oldpage->key[2],p_oldpage->key[3]);
+	  printf("%d %d %d %d\n",p_newpage->key[0],p_newpage->key[1],p_newpage->key[2],p_newpage->key[3]);
+	  printf("%d %d %d %d\n",p_oldpage->child[0],p_oldpage->child[1],p_oldpage->child[2],p_oldpage->child[3]);
+      printf("%d %d %d %d\n",p_newpage->child[0],p_newpage->child[1],p_newpage->child[2],p_newpage->child[3]);
+      
+	  //
       printf("Chave %d promovida\n",*promo_key);
 } 
