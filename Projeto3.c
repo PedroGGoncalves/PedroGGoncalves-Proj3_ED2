@@ -9,7 +9,7 @@
 #define NO 0
 #define YES 1
 #define PAGESIZE sizeof(BTPAGE)
-//n inserir duplicados no arquivo principal
+
 struct estrutura
   	{
     	char cliente[3],codfilme[3],nome[50], filme[50], genero[50];
@@ -26,7 +26,7 @@ int root; // rrn of root page
 FILE *btfd; // global file descriptor for "btree.dat"
 
 /* prototypes */
-int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss);
+int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss,int *encontrou);
 int btopen();
 void btclose();
 int getroot();
@@ -128,28 +128,31 @@ void insercao(FILE  *out,FILE *insere)
    		sprintf(reg,"##%s#%s#%s#%s#%s#%c",film.cliente,film.codfilme,film.nome,film.filme,film.genero,temp);
    		temp_2=strlen(reg); //temp2 armazenará o tamanho do registro reg que será usado para se locomover no arquivo saida
    		sprintf(reg,"%c#%s#%s#%s#%s#%s#%c",temp_2,film.cliente,film.codfilme,film.nome,film.filme,film.genero,temp);
-   		fwrite(reg, sizeof(char), strlen(reg), out);
-   		int con1,con2;
-   		con1=atoi(film.cliente);
-   		con2=atoi(film.codfilme);
    		
-   		//printf("%d %d",con1,con2);
-   		promoted = insert(root, (con1*100+con2), &promo_rrn, &promo_key,pos);
-          if (promoted)
-          	root = create_root(promo_key, root, promo_rrn,pos);
-         /* if (promoted!=-1)
-       		fwrite(reg, sizeof(char), strlen(reg), out); //registro é escrito no arquivo
-		  else
-		  	{
-		  		sprintf(reg,"#%c",temp);
-		  		fwrite(reg, sizeof(char), strlen(reg), out);
-			  }*/
+   		int con1,con2,con3=0;
+   		con1=atoi(film.cliente);
+   		con2=atoi(film.codfilme); ///aki mudar nome variavel
+   		
+   		promoted = insert(root, (con1*100+con2), &promo_rrn, &promo_key,pos,&con3);
+       
+        if(con3!=1)
+		  {
+		  	if (promoted)
+          		root = create_root(promo_key, root, promo_rrn,pos);
+		  	fwrite(reg, sizeof(char), strlen(reg), out);
+		  }
+          	
+         else
+         {
+         	sprintf(reg,"#%c",temp);
+		  	fwrite(reg, sizeof(char), strlen(reg), out);
+		 }
 	}
 
 	fclose(out);  fclose(insere);btclose(); 
 }
 //////////////
-int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss){
+int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss, int *encontrou){
        BTPAGE page, // current page
        newpage; // new page created if split occurs
        int found, promoted; // boolean values
@@ -163,15 +166,15 @@ int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss){
           promo_pos = NIL;
           return(YES);
        }
-       
+      
        btread(rrn, &page);
        found = search_node ( key, &page, &pos);
        
        if (found){
-          printf ("\nChave %d duplicada\n", key); return(0);
+          printf ("\nChave %d duplicada\n", key);  *encontrou=1; return(0);
        }
        
-       promoted = insert(page.child[pos], key, &p_b_rrn, &p_b_key,poss);
+       promoted = insert(page.child[pos], key, &p_b_rrn, &p_b_key,poss,encontrou);
  
  
  		/*if (promoted==-1){
@@ -362,16 +365,7 @@ void split(int key, int r_child, BTPAGE *p_oldpage, int *promo_key, int *promo_r
       p_newpage->keycount = MAXKEYS - MINKEYS;
       p_oldpage->keycount = MINKEYS;
       *promo_key = workkeys[MINKEYS];//att *promo_key = workkeys[MINKEYS-1];
-      printf("%d %d %d %d\n",workkeys[0],workkeys[1],workkeys[2],workkeys[3]);
-      printf("%d %d %d %d %d\n",workchil[0],workchil[1],workchil[2],workchil[3],workchil[4]);
-      printf("%d %d %d %d %d\n",workpos[0],workpos[1],workpos[2],workpos[3],workpos[4]);
-	  printf("%d %d %d %d\n",p_oldpage->key[0],p_oldpage->key[1],p_oldpage->key[2],p_oldpage->key[3]);
-	  printf("%d %d %d %d\n",p_newpage->key[0],p_newpage->key[1],p_newpage->key[2],p_newpage->key[3]);
-	  printf("%d %d %d %d\n",p_oldpage->child[0],p_oldpage->child[1],p_oldpage->child[2],p_oldpage->child[3]);
-      printf("%d %d %d %d\n",p_newpage->child[0],p_newpage->child[1],p_newpage->child[2],p_newpage->child[3]);
-      printf("%d %d %d %d\n",p_oldpage->pos[0],p_oldpage->pos[1],p_oldpage->pos[2],p_oldpage->pos[3]);
-      printf("%d %d %d %d\n",p_newpage->pos[0],p_newpage->pos[1],p_newpage->pos[2],p_newpage->pos[3]);
-	  //
+
       printf("Chave %d promovida",*promo_key);
 } 
 /////////
