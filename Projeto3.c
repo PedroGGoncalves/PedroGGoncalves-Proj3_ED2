@@ -19,14 +19,14 @@ struct estrutura
         int keycount; // number of keys in page
         int key[MAXKEYS]; // the actual keys
         int child[MAXKEYS+1]; // ptrs to rrns of descendants
-        int pos[MAXKEYS+1];
+        int pos[MAXKEYS];
 }BTPAGE;
 
 int root; // rrn of root page
 FILE *btfd; // global file descriptor for "btree.dat"
 
 /* prototypes */
-int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss,int *encontrou);
+int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss,int *encontrou, int *promo_pos);
 int btopen();
 void btclose();
 int getroot();
@@ -68,7 +68,7 @@ void insercao(FILE  *out,FILE *insere)
 	int promoted; // boolean: tells if a promotion from below
     int root, // rrn of root page
     promo_rrn; // rrn promoted from below
-    int promo_key, // key promoted from below
+    int promo_key,promo_pos, // key promoted from below
     key; // next key to insert in tree
 
     if (btopen()){
@@ -133,12 +133,12 @@ void insercao(FILE  *out,FILE *insere)
    		con1=atoi(film.cliente);
    		con2=atoi(film.codfilme); ///aki mudar nome variavel
    		
-   		promoted = insert(root, (con1*100+con2), &promo_rrn, &promo_key,pos,&con3);
+   		promoted = insert(root, (con1*100+con2), &promo_rrn, &promo_key,pos,&con3,&promo_pos);
        
         if(con3!=1)
 		  {
 		  	if (promoted)
-          		root = create_root(promo_key, root, promo_rrn,pos);
+          		root = create_root(promo_key, root, promo_rrn,promo_pos);
 		  	fwrite(reg, sizeof(char), strlen(reg), out);
 		  }
           	
@@ -152,18 +152,18 @@ void insercao(FILE  *out,FILE *insere)
 	fclose(out);  fclose(insere);btclose(); 
 }
 //////////////
-int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss, int *encontrou){
+int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss, int *encontrou, int *promo_pos){
        BTPAGE page, // current page
        newpage; // new page created if split occurs
        int found, promoted; // boolean values
        int pos,
        p_b_rrn; // rrn promoted from below
        int p_b_key; // key promoted from below
-       int promo_pos;
+       int p_b_pos; // pos promoted from below
        if (rrn == NIL){
           *promo_key = key;
           *promo_r_child = NIL;
-          promo_pos = NIL;
+          *promo_pos = poss;
           return(YES);
        }
       
@@ -174,7 +174,7 @@ int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss, int 
           printf ("\nChave %d duplicada\n", key);  *encontrou=1; return(0);
        }
        
-       promoted = insert(page.child[pos], key, &p_b_rrn, &p_b_key,poss,encontrou);
+       promoted = insert(page.child[pos], key, &p_b_rrn, &p_b_key,poss,encontrou,&p_b_pos);
  
  
  		/*if (promoted==-1){
@@ -185,11 +185,11 @@ int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss, int 
        }
        if(page.keycount < MAXKEYS){
        		printf("\nChave %d inserida com sucesso\n",p_b_key);//mudar de lugar para n repetir
-             ins_in_page(p_b_key, p_b_rrn, &page,poss);
+             ins_in_page(p_b_key, p_b_rrn, &page,p_b_pos);
              btwrite(rrn, &page);
              return(NO);
        }else{
-             split(p_b_key, p_b_rrn, &page, promo_key, promo_r_child, &newpage,poss, &promo_pos);
+             split(p_b_key, p_b_rrn, &page, promo_key, promo_r_child, &newpage,p_b_pos, promo_pos);
              printf("\nChave %d inserida com sucesso\n",p_b_key);//mudar de lugar para n repetir
 			 btwrite(rrn, &page);
              btwrite(*promo_r_child, &newpage);
@@ -261,11 +261,10 @@ int create_root(int key, int left, int right, int pos){
                  page.key[0] = key;
                  page.child[0] = left;
                  page.child[1] = right;
-                 page.keycount = 1;
                  page.pos[0]=pos;
+                 page.keycount = 1;
                  btwrite(rrn, &page);
                  putroot(rrn);
-                 printf("Pos:%d",page.pos[0]);
                  return(rrn);
 }
 void pageinit(BTPAGE *p_page){
@@ -274,10 +273,10 @@ void pageinit(BTPAGE *p_page){
      for (j = 0; j < MAXKEYS; j++){
          p_page->key[j] = NOKEY;
          p_page->child[j] = NIL;
-         p_page->pos[j]=NIL;
+         p_page->pos[j]=NOKEY;
      }
      p_page->child[MAXKEYS] = NIL;
-     p_page->pos[MAXKEYS] = NIL;
+    
 }
 int search_node(int key, BTPAGE *p_page, int *pos){
  int i;
@@ -296,6 +295,7 @@ void ins_in_page(int key,int r_child, BTPAGE *p_page, int pos){
      for(j = p_page-> keycount; key < p_page->key[j-1] && j > 0; j--){
            p_page->key[j] = p_page->key[j-1];
            p_page->child[j+1] = p_page->child[j];
+           p_page->pos[j]=p_page->pos[j-1];
      }
      
      p_page->keycount++;
@@ -317,30 +317,19 @@ void split(int key, int r_child, BTPAGE *p_oldpage, int *promo_key, int *promo_r
       //printf("\n");
       //workkeys[0], workkeys[1] *p_newpage
       workchil[j] = p_oldpage->child[j];
-      workpos[j] = p_oldpage->pos[j];
       for (j = MAXKEYS; key < workkeys[j-1] && j > 0; j--){
           workkeys[j] = workkeys[j-1];
           workchil[j+1] = workchil[j];
-          workpos[j+1] = workpos[j];
+          workpos[j] = workpos[j-1];
       }
       workkeys[j] = key;
       workchil[j+1] = r_child;
-      workpos[j+1]=poss;
+      workpos[j]=poss;
 
       *promo_r_child = getpage();
-      *promo_pos = getpage();
+      
       pageinit(p_newpage);
-      //Alterar aki para funcionar para ordem par (chave=3)
-      /*for (j = 0; j <= MINKEYS; j++){ //att mudei isso e qse foi
-          p_oldpage->key[j] = workkeys[j];
-          //printf("B%d %d %d\n",workkeys[j],workkeys[j+1+MINKEYS],NOKEY);
-          p_oldpage->child[j] = workchil[j];
-          p_newpage->key[j] = workkeys[j+1+MINKEYS];
-          p_newpage->child[j] = workchil[j+1+MINKEYS];
-          p_oldpage->key[j+MINKEYS] = NOKEY;
-          p_oldpage->child[j+1+MINKEYS] = NIL;
-          //printf("B%d %d %d\n",j,j+MINKEYS,j+1+MINKEYS);
-      }*/
+   
        p_oldpage->key[0] = workkeys[0];
         p_oldpage->child[0] = workchil[0];
         p_oldpage->pos[0] = workpos[0];
@@ -352,20 +341,19 @@ void split(int key, int r_child, BTPAGE *p_oldpage, int *promo_key, int *promo_r
         p_oldpage->key[2] = NOKEY;//adicioei isso att
         p_oldpage->child[2] = NIL;
         p_oldpage->child[1] = workchil[1];
-        p_oldpage->pos[2] = NIL;
-        p_oldpage->pos[1] = workpos[1];
+        p_oldpage->pos[1] = NOKEY;
+        p_oldpage->pos[2] = NOKEY;
         //att qse la
         //talvez fazer ideia (ver anots)
         p_newpage->key[1] = workkeys[3];
         p_newpage->child[1] = workchil[3];
         p_newpage->child[2] = workchil[4]; //ultima mudança e aparentemente certyo
         p_newpage->pos[1] = workpos[3];
-        p_newpage->pos[2] = workpos[4]; //ultima mudança e aparentemente certyo
       
       p_newpage->keycount = MAXKEYS - MINKEYS;
       p_oldpage->keycount = MINKEYS;
       *promo_key = workkeys[MINKEYS];//att *promo_key = workkeys[MINKEYS-1];
-
+	  *promo_pos = workpos[MINKEYS]; //////att
       printf("Chave %d promovida",*promo_key);
 } 
 /////////
@@ -377,7 +365,7 @@ void Listar_todos_aux(int rrn){
         for(i = 0; i<page.keycount; i++)
         {
             Listar_todos_aux(page.child[i]);
-            printf(" %d",  page.key[i]);
+            printf("%d %d ",  page.key[i],page.pos[i]);
         }
         Listar_todos_aux(page.child[i]);
     }
@@ -393,15 +381,15 @@ void Listar_todos(int rrn){
 	//printf("%d %d ", *page.pos, page.key[1]);	
 	Listar_todos_aux(page.child[0]);
 	if(page.key[0]!=-1)
-	printf(" %d ", page.key[0]);
+	printf("%d %d ",  page.key[0],page.pos[0]);
 	
 	Listar_todos_aux(page.child[1]);
 	if(page.key[1]!=-1)
-	printf(" %d ", page.key[1]);
+	printf("%d %d ",  page.key[1],page.pos[1]);
 	
 	Listar_todos_aux(page.child[2]);
 	if(page.key[2]!=-1)
-	printf(" %d ", page.key[2]);
+	printf("%d %d ",  page.key[2],page.pos[2]);
 	
 	Listar_todos_aux(page.child[3]);
 	
@@ -445,6 +433,7 @@ int main()
 						btopen();
 						Listar_todos(0);
 						btclose();
+						break;
 				case 4:
 						printf("\nSaindo...\n");break;
 				default: printf("\nErro\n");
