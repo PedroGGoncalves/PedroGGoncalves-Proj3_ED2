@@ -13,11 +13,11 @@
 Grupo Gustavo Rosseto e Pedro Gonçalves
 
 
-CASE 3 - MUDAR PARA N IR ATE O FIM, PARAR QND ENCONTRAR O VALOR
-? FAZER NA ORDEM (PRIMEIRA LINHA,DPS SEGUNDA...)/ TALVEZ FAZER IF < Oou >
+CASE 3 - 
+? FAZER NA ORDEM (PRIMEIRA LINHA,DPS SEGUNDA...) TALVEZ FAZER IF < Oou >
 Corrigir pagina
-Organizar, melhorar nome de variavies
-Função printar ?
+?TODOS OS ARQUIVOS DEVERÃO SER MANIPULADOS EM MEMÓRIA SECUNDÁRIA.
+
 */
 struct estrutura
   	{
@@ -70,9 +70,8 @@ int pega_registro(FILE *p_out, char *p_reg) //utilizado para saber se o registro
 }
 void insercao(FILE  *out,FILE *insere)
 {
-    int temp,temp_2=0,tam_reg,tam_arq,temp3,tamanho;
-	char reg[160];
-	
+    int temp,temp_2=0,tam_reg,tam_arq,temp3,tamanho,temp1,temp4=0;
+	char reg[160],temp2[100];
 	//////////
 	int promoted; // boolean: tells if a promotion from below
     int root, // rrn of root page
@@ -95,7 +94,6 @@ void insercao(FILE  *out,FILE *insere)
 	int pos=ftell(out);
 	fseek(out,0,0);
 	
-	
 	tam_reg=pega_registro(out,reg);
 	if (tam_reg==0) //nada no arquivo
 	{
@@ -104,20 +102,14 @@ void insercao(FILE  *out,FILE *insere)
    		temp=(ftell(insere))/156; 
    		sprintf(reg,"##%s#%s#%s#%s#%s#%c",film.cliente,film.codfilme,film.nome,film.filme,film.genero,temp);
    		temp_2=strlen(reg); //temp2 armazenará o tamanho do registro reg que será usado para se locomover no arquivo saida
-   		//conf temp_2
+   		
 		sprintf(reg,"%c#%s#%s#%s#%s#%s#%c",temp_2,film.cliente,film.codfilme,film.nome,film.filme,film.genero,temp);
    		fwrite(reg, sizeof(char), strlen(reg), out); //registro é escrito no arquivo
    		
-   		char con2[100];
-		int con1;/*con2;
-   		con1=atoi(film.cliente);
-   		con2=atoi(film.codfilme);*/
-   		
-   		//printf("%d %d",con1,con2);
-   		strcat(strcpy(con2,film.cliente),film.codfilme);
-   		con1=atoi(con2);
-          root = create_root(con1, NIL, NIL,pos);
-   		  printf("\nChave %d inserida com sucesso\n",con1);
+   		strcat(strcpy(temp2,film.cliente),film.codfilme);
+   		temp1=atoi(temp2);
+        root = create_root(temp1, NIL, NIL,pos);
+   		printf("\nChave %d inserida com sucesso\n",temp1);
    		}
 	else //já tem conteúdo
 	{	
@@ -139,16 +131,13 @@ void insercao(FILE  *out,FILE *insere)
    		sprintf(reg,"##%s#%s#%s#%s#%s#%c",film.cliente,film.codfilme,film.nome,film.filme,film.genero,temp);
    		temp_2=strlen(reg); //temp2 armazenará o tamanho do registro reg que será usado para se locomover no arquivo saida
    		sprintf(reg,"%c#%s#%s#%s#%s#%s#%c",temp_2,film.cliente,film.codfilme,film.nome,film.filme,film.genero,temp);
+		
+   		strcat(strcpy(temp2,film.cliente),film.codfilme);
+   		temp1=atoi(temp2);
    		
-   		int con3=0;
-   		char con2[100];
-		int con1;/*con2;*/
-   		strcat(strcpy(con2,film.cliente),film.codfilme);
-   		con1=atoi(con2);
-   		//talvez seja melhor concatenar em vez de fazer essa operação////
-   		promoted = insert(root, con1, &promo_rrn, &promo_key,pos,&con3,&promo_pos);
+   		promoted = insert(root, temp1, &promo_rrn, &promo_key,pos,&temp4,&promo_pos);
        
-        if(con3!=1)
+        if(temp4!=1)
 		  {
 		  	if (promoted)
           		root = create_root(promo_key, root, promo_rrn,promo_pos);
@@ -189,10 +178,6 @@ int insert (int rrn, int key, int *promo_r_child, int *promo_key, int poss, int 
        
        promoted = insert(page.child[pos], key, &p_b_rrn, &p_b_key,poss,encontrou,&p_b_pos);
  
- 
- 		/*if (promoted==-1){
-		  	return(-1);
-       } */
        if (!promoted){
 		  	return(NO);
        }
@@ -324,11 +309,8 @@ void split(int key, int r_child, BTPAGE *p_oldpage, int *promo_key, int *promo_r
       for (j = 0; j < MAXKEYS; j++){
           workkeys[j] = p_oldpage->key[j];
           workchil[j] = p_oldpage->child[j];
-          workpos[j] = p_oldpage->pos[j];
-          //printf("%d %d A",p_oldpage->key[j],p_oldpage->child[j]);
+          workpos[j] = p_oldpage->pos[j]; 
       }
-      //printf("\n");
-      //workkeys[0], workkeys[1] *p_newpage
       workchil[j] = p_oldpage->child[j];
       for (j = MAXKEYS; key < workkeys[j-1] && j > 0; j--){
           workkeys[j] = workkeys[j-1];
@@ -351,29 +333,43 @@ void split(int key, int r_child, BTPAGE *p_oldpage, int *promo_key, int *promo_r
         p_newpage->pos[0] = workpos[2];
         
         p_oldpage->key[1] = NOKEY;
-        p_oldpage->key[2] = NOKEY;//adicioei isso att
+        p_oldpage->key[2] = NOKEY;
         p_oldpage->child[2] = NIL;
         p_oldpage->child[1] = workchil[1];
         p_oldpage->pos[1] = NOKEY;
         p_oldpage->pos[2] = NOKEY;
-        //att qse la
-        //talvez fazer ideia (ver anots)
+      
         p_newpage->key[1] = workkeys[3];
         p_newpage->child[1] = workchil[3];
-        p_newpage->child[2] = workchil[4]; //ultima mudança e aparentemente certyo
+        p_newpage->child[2] = workchil[4]; 
         p_newpage->pos[1] = workpos[3];
       
       p_newpage->keycount = MAXKEYS - MINKEYS;
       p_oldpage->keycount = MINKEYS;
-      *promo_key = workkeys[MINKEYS];//att *promo_key = workkeys[MINKEYS-1];
-	  *promo_pos = workpos[MINKEYS]; //////att
+      *promo_key = workkeys[MINKEYS];
+	  *promo_pos = workpos[MINKEYS]; 
       printf("Chave %d promovida",*promo_key);
 } 
 /////////
+void exibirTela (char *filme)
+{
+	char *pch;
+	pch = identifica_campo(filme,1);
+	printf("Cod Cliente:%s\n",pch);
+	pch = identifica_campo(NULL,1);
+	printf("Cod Filme:%s\n",pch);
+	pch = identifica_campo(NULL,1);
+	printf("Nome Cliente:%s\n",pch);
+	pch = identifica_campo(NULL,1);
+	printf("Nome Filme:%s\n",pch);
+	pch = identifica_campo(NULL,1);
+	printf("Genero:%s\n",pch);
+	pch = identifica_campo(NULL,1);
+}
 void Listar_todos_aux(int rrn,FILE *out){
     BTPAGE page;
     int i;
-    char *pch,num5;
+    char num5;
     fseek(out,0,0);
     if(rrn != NIL){
         btread(rrn, &page);
@@ -381,22 +377,11 @@ void Listar_todos_aux(int rrn,FILE *out){
         {
             Listar_todos_aux(page.child[i],out);
             printf("%d\n",  page.key[i]);
-            
 			fseek(out,page.pos[i],0);
             fread(&num5,sizeof(char),1,out);//posição para se locomover
 			char filme[(int)num5];
 			fread(&filme,sizeof(filme),1,out);
-			pch = identifica_campo(filme,1);
-			printf("Cod Cliente:%s\n",pch);
-			pch = identifica_campo(NULL,1);
-			printf("Cod Filme:%s\n",pch);
-			pch = identifica_campo(NULL,1);
-			printf("Nome Cliente:%s\n",pch);
-			pch = identifica_campo(NULL,1);
-			printf("Nome Filme:%s\n",pch);
-			pch = identifica_campo(NULL,1);
-			printf("Genero:%s\n",pch);
-			pch = identifica_campo(NULL,1);
+			exibirTela(filme);
         }
         Listar_todos_aux(page.child[i],out);
     }
@@ -410,7 +395,6 @@ void Listar_todos(int rrn,FILE *out){
 	root = getroot();
 	btread(root, &page);
 	
-	//printf("%d %d ", *page.pos, page.key[1]);	
 	Listar_todos_aux(page.child[0],out);
 	if(page.key[0]!=-1)
 	{
@@ -419,17 +403,7 @@ void Listar_todos(int rrn,FILE *out){
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
 		char filme[(int)num5];
 		fread(&filme,sizeof(filme),1,out);
-		pch = identifica_campo(filme,1);
-		printf("Cod Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Cod Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Genero:%s\n",pch);
-		pch = identifica_campo(NULL,1);
+		exibirTela(filme);
 	}
 	
 	Listar_todos_aux(page.child[1],out);
@@ -438,20 +412,9 @@ void Listar_todos(int rrn,FILE *out){
 		printf("%d\n",  page.key[1]);
 		fseek(out,page.pos[1],0);
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
-		char filme2[(int)num5];
-		fread(&filme2,sizeof(filme2),1,out);
-		pch = identifica_campo(filme2,1);
-		printf("Cod Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Cod Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Genero:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		
+		char filme[(int)num5];
+		fread(&filme,sizeof(filme),1,out);
+		exibirTela(filme);	
 	}
 	Listar_todos_aux(page.child[2],out);
 	if(page.key[2]!=-1)
@@ -459,72 +422,48 @@ void Listar_todos(int rrn,FILE *out){
 		printf("%d\n",  page.key[2]);
 		fseek(out,page.pos[2],0);
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
-		char filme2[(int)num5];
-		fread(&filme2,sizeof(filme2),1,out);
-		pch = identifica_campo(filme2,1);
-		printf("Cod Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Cod Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Genero:%s\n",pch);
-		pch = identifica_campo(NULL,1);
+		char filme[(int)num5];
+		fread(&filme,sizeof(filme),1,out);
+		exibirTela(filme);
 	}
-	//pch
-	//colcoar td dentro do if
 	Listar_todos_aux(page.child[3],out);	
 	
 	fclose(out);			
 }
 ///////////////
-void Listar_especifico_aux(FILE *out, int rrn, int valor){
+void Listar_especifico_aux(FILE *out, int rrn, int valor, int *cond){
 	BTPAGE page;
     int i;
     char *pch,num5;
     fseek(out,0,0);
-    if(rrn != NIL){
+    if(rrn != NIL && *cond==0){
         btread(rrn, &page);
         for(i = 0; i<page.keycount; i++)
         {
-            //fazer if encontrou
             if(valor==page.key[i])
             {
-            printf("CChave %d encontrada, pagina %d, posicao %d\n",  page.key[i], rrn, i);//pagina ta errado
-            
+            printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[i], rrn, i);//pagina ta errado
 			fseek(out,page.pos[i],0);
             fread(&num5,sizeof(char),1,out);//posição para se locomover
 			char filme[(int)num5];
 			fread(&filme,sizeof(filme),1,out);
-			pch = identifica_campo(filme,1);
-			printf("Cod Cliente:%s\n",pch);
-			pch = identifica_campo(NULL,1);
-			printf("Cod Filme:%s\n",pch);
-			pch = identifica_campo(NULL,1);
-			printf("Nome Cliente:%s\n",pch);
-			pch = identifica_campo(NULL,1);
-			printf("Nome Filme:%s\n",pch);
-			pch = identifica_campo(NULL,1);
-			printf("Genero:%s\n",pch);
-			pch = identifica_campo(NULL,1);
+			exibirTela(filme);
+			*cond=1;
+			return;
 			}
-			Listar_especifico_aux(out,page.child[i],valor);   
+			Listar_especifico_aux(out,page.child[i],valor,cond);   
         }
-       	Listar_especifico_aux(out,page.child[i],valor);
+       	Listar_especifico_aux(out,page.child[i],valor,cond);
     }
 }
-///mexeer mais nisso//organizar
 void Listar_especifico(FILE* busca,FILE *out, int rrn)
 {
-	int root,cont=0;
+	int root,cont=0,tam_aux,cond=0,temp1,temp3;
 	BTPAGE page;
 	root = getroot();
 	btread(root, &page);
-	char *pch,num5,num;
-	char reg[160];
-
+	char *pch,num5,num,reg[160],temp2[100];
+	
     fseek(out,0,0);
 	fseek(busca,0,0);
 	FILE *aux;
@@ -542,7 +481,6 @@ void Listar_especifico(FILE* busca,FILE *out, int rrn)
 	}
 	else
 	{
-		int tam_aux;
 		fseek(aux,0,SEEK_END);	
 		tam_aux=ftell(aux);
 		fseek(aux,ftell(aux)-1,0);	
@@ -552,90 +490,72 @@ void Listar_especifico(FILE* busca,FILE *out, int rrn)
 		cont=cont+1;
 		sprintf(reg,"%d",cont);
 		fwrite(reg, sizeof(char), strlen(reg), aux);
-		fseek(busca,(cont-1)*6,0);
+		fseek(busca,0,SEEK_END);
+		if(ftell(busca)<=(cont-1)*6)
+		{
+			printf("Fim de arquivo\n");
+			return;	
+		}
+		else
+		{
+			fseek(busca,(cont-1)*6,0);
+		}
+		
 	}
 	fread(&film.cliente,sizeof(film.cliente),1,busca); 
 	fread(&film.codfilme,sizeof(film.codfilme),1,busca); 
-	
-	int con1,con2;
-   	con1=atoi(film.cliente);
-   	con2=atoi(film.codfilme);
-
-   	int con3=page.key[0];
    	
-	if(page.key[0]!=-1&&(con1*100+con2)==con3)
+	strcat(strcpy(temp2,film.cliente),film.codfilme);
+	temp1=atoi(temp2);
+    temp3=page.key[0];
+	if(page.key[0]!=-1&&temp1==temp3&&cond==0)
 	{
 		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[0], rrn, 0);//conferir isso de pag
 		fseek(out,page.pos[0],0);
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
 		char filme[(int)num5];
 		fread(&filme,sizeof(filme),1,out);
-		pch = identifica_campo(filme,1);
-		printf("Cod Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Cod Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Genero:%s\n",pch);
-		pch = identifica_campo(NULL,1);
+		exibirTela(filme);
+		cond=1;
 	}
-	Listar_especifico_aux(out,page.child[0],(con1*100+con2));
+	Listar_especifico_aux(out,page.child[0],temp1,&cond);
 
-	con3=page.key[1];
-	if(page.key[1]!=-1&&(con1*100+con2)==con3)
+	temp3=page.key[1];
+	if(page.key[1]!=-1&&temp1==temp3&&cond==0)
 	{
 		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[1], rrn, 1);
 		fseek(out,page.pos[1],0);
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
-		char filme2[(int)num5];
-		fread(&filme2,sizeof(filme2),1,out);
-		pch = identifica_campo(filme2,1);
-		printf("Cod Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Cod Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Genero:%s\n",pch);
-		pch = identifica_campo(NULL,1);
+		char filme[(int)num5];
+		fread(&filme,sizeof(filme),1,out);
+		exibirTela(filme);
+		cond=1;
 	}
 	
-	Listar_especifico_aux(out,page.child[1],(con1*100+con2));
+	Listar_especifico_aux(out,page.child[1],temp1,&cond);
 	
-	con3=page.key[2];
-	Listar_especifico_aux(out,page.child[2],(con1*100+con2));
+	temp3=page.key[2];
 	
-	if(page.key[2]!=-1&&(con1*100+con2)==con3)
+	if(page.key[2]!=-1&&temp1==temp3&&cond==0)
 	{
 		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[2], rrn, 2);
 		fseek(out,page.pos[2],0);
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
-		char filme2[(int)num5];
-		fread(&filme2,sizeof(filme2),1,out);
-		pch = identifica_campo(filme2,1);
-		printf("Cod Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Cod Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Cliente:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Nome Filme:%s\n",pch);
-		pch = identifica_campo(NULL,1);
-		printf("Genero:%s\n",pch);
-		pch = identifica_campo(NULL,1);
+		char filme[(int)num5];
+		fread(&filme,sizeof(filme),1,out);
+		exibirTela(filme);
+		cond=1;
 	}
-	Listar_especifico_aux(out,page.child[3],(con1*100+con2));	
-	   				
-	//Listar_todos_aux(page.child[3],out);
+	Listar_especifico_aux(out,page.child[2],(temp1),&cond);
+	
+	Listar_especifico_aux(out,page.child[3],(temp1),&cond);	
+	if(cond==0)
+	{
+		printf("Chave %d nao encontrada\n",temp1);
+	}  				
 	fclose(out);fclose(busca);fclose(aux);
-	/////organiar e ver se ta completo
-}
 
+}
 ////////////
 int main()
 {
