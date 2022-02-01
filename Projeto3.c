@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <conio.h>
 #include <stdlib.h>
 #include <string.h>
 #define MAXKEYS 3
@@ -11,14 +10,8 @@
 #define PAGESIZE sizeof(BTPAGE)
 /*
 Grupo Gustavo Rosseto e Pedro Gonçalves
-
-
-CASE 3 - 
-? FAZER NA ORDEM (PRIMEIRA LINHA,DPS SEGUNDA...) TALVEZ FAZER IF < Oou >
-Corrigir pagina
-?TODOS OS ARQUIVOS DEVERÃO SER MANIPULADOS EM MEMÓRIA SECUNDÁRIA.
-
 */
+
 struct estrutura
   	{
     	char cliente[3],codfilme[3],nome[50], filme[50], genero[50];
@@ -55,6 +48,7 @@ char *identifica_campo(char *ts,int num)
 {
 	if(num==1)
 		return strtok(ts,"#");
+	return 0;
 }	
 int pega_registro(FILE *p_out, char *p_reg) //utilizado para saber se o registro está vazio ou não
 {
@@ -70,14 +64,14 @@ int pega_registro(FILE *p_out, char *p_reg) //utilizado para saber se o registro
 }
 void insercao(FILE  *out,FILE *insere)
 {
-    int temp,temp_2=0,tam_reg,tam_arq,temp3,tamanho,temp1,temp4=0;
+    int temp,temp_2=0,tam_reg,tam_arq,temp1,temp4=0;
 	char reg[160],temp2[100];
 	//////////
 	int promoted; // boolean: tells if a promotion from below
     int root, // rrn of root page
     promo_rrn; // rrn promoted from below
-    int promo_key,promo_pos, // key promoted from below
-    key; // next key to insert in tree
+    int promo_key,promo_pos; // key promoted from below
+    //key; // next key to insert in tree
 
     if (btopen()){
        root = getroot();
@@ -90,23 +84,23 @@ void insercao(FILE  *out,FILE *insere)
 	tam_arq=ftell(insere);   //pega tamnho do arquivo
 	fseek(insere,0,0);	     //coloca o arquivo no início
 	
-	fseek(out,0,SEEK_END);
+	fseek(out,0,SEEK_END);	//mesma coisa mas do arquivo de saida
 	int pos=ftell(out);
 	fseek(out,0,0);
 	
-	tam_reg=pega_registro(out,reg);
+	tam_reg=pega_registro(out,reg); // tam_reg == 0, arquivo vazio
 	if (tam_reg==0) //nada no arquivo
 	{
 		
    		fread(&film,sizeof(film),1,insere); 
-   		temp=(ftell(insere))/156; 
+   		temp=(ftell(insere))/156; 	//marcar posicao							
    		sprintf(reg,"##%s#%s#%s#%s#%s#%c",film.cliente,film.codfilme,film.nome,film.filme,film.genero,temp);
    		temp_2=strlen(reg); //temp2 armazenará o tamanho do registro reg que será usado para se locomover no arquivo saida
    		
 		sprintf(reg,"%c#%s#%s#%s#%s#%s#%c",temp_2,film.cliente,film.codfilme,film.nome,film.filme,film.genero,temp);
    		fwrite(reg, sizeof(char), strlen(reg), out); //registro é escrito no arquivo
    		
-   		strcat(strcpy(temp2,film.cliente),film.codfilme);
+   		strcat(strcpy(temp2,film.cliente),film.codfilme); //copia o codigo cliente e concatena com o condifo do fime
    		temp1=atoi(temp2);
         root = create_root(temp1, NIL, NIL,pos);
    		printf("\nChave %d inserida com sucesso\n",temp1);
@@ -114,7 +108,7 @@ void insercao(FILE  *out,FILE *insere)
 	else //já tem conteúdo
 	{	
 		fseek(out,0,SEEK_END); 
-		temp3=ftell(out);
+	//	temp3=ftell(out);
 		fseek(out,ftell(out)-1,0); //arquivo na penultima posição
 		fread(&temp_2,sizeof(int),1,out); //será lido a temp_2 para saber em que parte do arquivo está
 		fseek(out,0,SEEK_END); //coloca o arquivo saida na ultima posição para inserção
@@ -137,7 +131,7 @@ void insercao(FILE  *out,FILE *insere)
    		
    		promoted = insert(root, temp1, &promo_rrn, &promo_key,pos,&temp4,&promo_pos);
        
-        if(temp4!=1)
+        if(temp4!=1)	//se temp4 ==1, significa que ja existe esse registro
 		  {
 		  	if (promoted)
           		root = create_root(promo_key, root, promo_rrn,promo_pos);
@@ -303,7 +297,6 @@ void ins_in_page(int key,int r_child, BTPAGE *p_page, int pos){
 }
 void split(int key, int r_child, BTPAGE *p_oldpage, int *promo_key, int *promo_r_child, BTPAGE *p_newpage,int poss, int *promo_pos){
  int j;
- int mid;
  int workkeys[MAXKEYS+1];  int workchil[MAXKEYS+2];int workpos[MAXKEYS+2];
 	printf("\nDivisao de noh\n");
       for (j = 0; j < MAXKEYS; j++){
@@ -351,7 +344,7 @@ void split(int key, int r_child, BTPAGE *p_oldpage, int *promo_key, int *promo_r
       printf("Chave %d promovida",*promo_key);
 } 
 /////////
-void exibirTela (char *filme)
+void exibirTela (char *filme)			
 {
 	char *pch;
 	pch = identifica_campo(filme,1);
@@ -366,7 +359,7 @@ void exibirTela (char *filme)
 	printf("Genero:%s\n",pch);
 	pch = identifica_campo(NULL,1);
 }
-void Listar_todos_aux(int rrn,FILE *out){
+void Listar_todos_aux(int rrn,FILE *out){		//
     BTPAGE page;
     int i;
     char num5;
@@ -390,7 +383,7 @@ void Listar_todos_aux(int rrn,FILE *out){
 void Listar_todos(int rrn,FILE *out){
 	int root;
 	BTPAGE page;
-	char *pch,num5;
+	char num5;
     fseek(out,0,0);	
 	root = getroot();
 	btread(root, &page);
@@ -434,7 +427,7 @@ void Listar_todos(int rrn,FILE *out){
 void Listar_especifico_aux(FILE *out, int rrn, int valor, int *cond){
 	BTPAGE page;
     int i;
-    char *pch,num5;
+    char num5;
     fseek(out,0,0);
     if(rrn != NIL && *cond==0){
         btread(rrn, &page);
@@ -442,7 +435,7 @@ void Listar_especifico_aux(FILE *out, int rrn, int valor, int *cond){
         {
             if(valor==page.key[i])
             {
-            printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[i], rrn, i);//pagina ta errado
+            printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[i], rrn  , i);//pagina ta errado
 			fseek(out,page.pos[i],0);
             fread(&num5,sizeof(char),1,out);//posição para se locomover
 			char filme[(int)num5];
@@ -458,11 +451,12 @@ void Listar_especifico_aux(FILE *out, int rrn, int valor, int *cond){
 }
 void Listar_especifico(FILE* busca,FILE *out, int rrn)
 {
-	int root,cont=0,tam_aux,cond=0,temp1,temp3;
+	int root,cont=0,cond=0,temp1,temp3;
 	BTPAGE page;
 	root = getroot();
 	btread(root, &page);
-	char *pch,num5,num,reg[160],temp2[100];
+	char num5,reg[160],temp2[100];
+	int temp4;
 	
     fseek(out,0,0);
 	fseek(busca,0,0);
@@ -470,25 +464,26 @@ void Listar_especifico(FILE* busca,FILE *out, int rrn)
 	if ((aux = fopen("auxbusca.bin","a+b")) == NULL)
 	{
 		printf("Nao foi possivel abrir o arquivo");
-		getche();
 		return ;
 	}
 	int tam_reg=pega_registro(aux,reg);
 	if(tam_reg==0)
 	{
-		sprintf(reg,"%d",cont+1);
+		sprintf(reg,"%c",1);
 		fwrite(reg, sizeof(char), strlen(reg), aux);
 	}
 	else
 	{
 		fseek(aux,0,SEEK_END);	
-		tam_aux=ftell(aux);
+		
 		fseek(aux,ftell(aux)-1,0);	
-		fread(&num,sizeof(char),1,aux);
+		fread(&temp4,sizeof(int),1,aux);
+		
 		fseek(aux,ftell(aux)+1,0);
-		cont=num-'0';
+		
+		cont= temp4;
 		cont=cont+1;
-		sprintf(reg,"%d",cont);
+		sprintf(reg,"%c",cont);
 		fwrite(reg, sizeof(char), strlen(reg), aux);
 		fseek(busca,0,SEEK_END);
 		if(ftell(busca)<=(cont-1)*6)
@@ -510,7 +505,7 @@ void Listar_especifico(FILE* busca,FILE *out, int rrn)
     temp3=page.key[0];
 	if(page.key[0]!=-1&&temp1==temp3&&cond==0)
 	{
-		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[0], rrn, 0);//conferir isso de pag
+		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[0], getroot(), 0);//conferir isso de pag
 		fseek(out,page.pos[0],0);
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
 		char filme[(int)num5];
@@ -523,7 +518,7 @@ void Listar_especifico(FILE* busca,FILE *out, int rrn)
 	temp3=page.key[1];
 	if(page.key[1]!=-1&&temp1==temp3&&cond==0)
 	{
-		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[1], rrn, 1);
+		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[1], getroot(), 1);
 		fseek(out,page.pos[1],0);
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
 		char filme[(int)num5];
@@ -538,7 +533,7 @@ void Listar_especifico(FILE* busca,FILE *out, int rrn)
 	
 	if(page.key[2]!=-1&&temp1==temp3&&cond==0)
 	{
-		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[2], rrn, 2);
+		printf("Chave %d encontrada, pagina %d, posicao %d\n",  page.key[2], getroot(), 2);
 		fseek(out,page.pos[2],0);
 	    fread(&num5,sizeof(char),1,out);//posição para se locomover
 		char filme[(int)num5];
@@ -560,7 +555,7 @@ void Listar_especifico(FILE* busca,FILE *out, int rrn)
 int main()
 {
 	int op=1;
-	FILE *insere,*out,*arvore,*busca;
+	FILE *insere,*out,*busca;
 
 	while(op!=4)
 	{
@@ -573,14 +568,14 @@ int main()
 						if ((insere = fopen("insere.bin","r+b")) == NULL)
 						 {
 							printf("Nao foi possivel abrir o arquivo");
-							getche();
+						
 							return 0;
 						 }
 						  printf("\ninsere.bin carregado");
 						if ((out = fopen("principal.bin","a+b")) == NULL)
 						 {
 							printf("Nao foi possivel abrir o arquivo");
-							getche();
+							
 							return 0;
 						 }
 						printf("\nprincipal.bin carregado");
@@ -591,7 +586,7 @@ int main()
 						if ((out = fopen("principal.bin","a+b")) == NULL)
 						 {
 							printf("Nao foi possivel abrir o arquivo");
-							getche();
+						
 							return 0;
 						 }
 						printf("\nprincipal.bin carregado\n");
@@ -603,7 +598,7 @@ int main()
 						if ((busca = fopen("busca.bin","r+b")) == NULL)
 						 {
 							printf("Nao foi possivel abrir o arquivo");
-							getche();
+						
 							return 0;
 						 }
 						 
@@ -611,7 +606,7 @@ int main()
 						  if ((out = fopen("principal.bin","a+b")) == NULL)
 						 {
 							printf("Nao foi possivel abrir o arquivo");
-							getche();
+						
 							return 0;
 						 }
 						printf("\nprincipal.bin carregado\n");
